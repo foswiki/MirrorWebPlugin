@@ -1,0 +1,130 @@
+---+!! !MirrorWebPlugin
+<a href="http://wikiring.com"><img src="%ATTACHURL%/logo.png" style="float:right" /></a>
+
+%SHORTDESCRIPTION%
+
+%TOC%
+
+Sometimes you want to share the contents of your wiki with other people, but without revealing all the contents of your topics, and without revealing all topics to everybody. Other times you want to allow free edit within a group of users, and only publish known, edited, versions of that content for public consumption.
+
+This plugin lets you do just that. The basic idea is that your master issues web, call it "Internal", is mirrored to a slave web, call it "Public". The mirrored topics in "Public" contain data taken from the "Internal" web, but passed through _filters_.
+
+For example, consider an issue tracker, where employees can see _all_ data in all issues, but the customer must only see a _subset_ of the data associated with their specific issues. After an initial update to populate the mirror, topics are mirrored automatically when they are saved, or an attachment is added. 
+
+Another example is where the plugin is used as part of a _publishing_ process. Access to the "update mirror" step is restricted to certain users, so only those users can mirror the "Internal" web to the "Public" web.
+
+Features:
+   * Filter form fields, so that only selected fields get moved into the mirror topic,
+   * Filter the topic text,
+   * Derive access controls for the mirrored topic from form fields (and other sophisticated filtering),
+   * Run automatically whenever a topic is saved in the master web, or run only when requested,
+   * Update tool allows you to change the filtering criteria after mirroring has already started.
+
+---++ Usage
+
+There are two main modes of operation; _always mirror_, where topics are mirrored every time they are saved, and _mirror on demand_, where mirroring is manually triggered.
+
+To start mirroring a web to another web in either mode, create the mirror web (the copy) and set the web preference =MIRRORWEBPLUGIN_MIRROR= in the web that you want to mirror (the original). i.e if you want to mirror web "Internal" to web "Public", then
+   * <nop>Set MIRRORWEBPLUGIN_MIRROR = Public
+in =Internal.WebPreferences=.
+
+Add the =%<nop>UPDATEMIRROR%= macro to a topic in the web - either =WebPreferences= or =WebHome= would be a good choice. This will generate a button in that topic that will update _all_ the topics in the mirror in one go. In "always mirror" mode you usually only need to do this when mirroring an existing web for the first time. In "mirror on demand" mode, this button is how you trigger an update.
+
+The transformation rules are defined in a topic pointed to by =MIRRORWEBPLUGIN_RULES= - again this should refer to the fully-qualified name of a topic (usually stored in the mirror web). This topic must contain a single verbatim block with a filter description, which is best explained using an example:
+<pre>
+&lt;verbatim>
+TaskTeamForm => {
+    FIELD => {
+        Customer => [ 'CLEARPREFERENCES', 'MAKEGROUP', 'ALLOWTOPICCHANGE' ],
+        Summary => [],
+        Status => []
+    },
+    text => []
+},
+none {
+   text => []
+},
+other {
+   text => [ 'UNKNOWN' ]
+}
+&lt;/verbatim>
+</pre>
+This defines a set of filters for all topics that carry:
+   1 a specific type of form, or
+   1 =none= for topics with no form, or
+   1 =other= for topics that have a form but it isn't explicitly listed, or if it would match 'none' but 'none' is not defined. If a topic doesn't match any of the defined rule sets, it won't be mirrored.
+
+Each form type maps parts of the topic to another hash or to a filter; at this level the keys 'FIELD' and 'text' can be used, relating to the individual fields in the form and the main body text respectively. 'text' is mapped direct to a filter. Under 'FIELD' the name of each form field is mapped to a list of filter names. =[]= means the same as 'accept this field without modification'. Any fields not listed in the rules will be ignored.
+
+Thus the example defines rules for topics that (1) have the form 'TaskTeamForm', (2) have no form or (3) have a form but it isn't known. If the topic has no form, the text is just copied. If the topic has a form, but it doesn't have any rules, then the transformation is to add the text returned by the 'UNKNOWN' function before the topic text. If the topic has the 'TaskTeamForm', then the body text and the 'Summary', and 'Status' fields from the form are all copied across without modification. The filtering of 'Customer' field is used to create a group name that is then used to set the access controls on the mirror topic.
+
+Note that if the mirror topic already exists, then as much of the topic is retained as possible. Only the fields explicitly listed in the filters will be overwritten. This allows users to interact with the mirror and (for example) add comments, attach documents etc.
+
+The following example rules are installed with the plugin:
+| *Rule name* | *Description* |
+| ALLOWTOPICVIEW | Limit who can view the topic to people (wiki)named in a comma-separated list |
+| ALLOWTOPICCHANGE | Limit who can change the topic to people (wiki)named in a comma-separated list |
+| CLEARPREFERENCES | Removes all META:PREFERENCE settings from the mirror topic. It's usually wise to do this prior to setting access controls. |
+| FORMFIELD(Fieldname) | Gets the value of the named formfield from the topic named in the field. See VarFORMFIELD. |
+| MAKEGROUP | Convert the field value to a group name, by converting it to a wikiword and appending "Group". |
+| NOSET | This is a 'NOP' that is used to terminate a filter chain *without* setting a value in the mirror topic. Use it when you want to process the value of a field, but without exporting that value to the mirror. |
+| SUBSCRIBE | Use the !MailerContrib to subscribe people (wiki)named in a comma-separated list to topic change notification |
+| TEXTORCOMMENT | If the mirror topic contains text, then retain it; otherwise add %<nop>COMMENT%, The topic text from the mirrored web is discarded (use with =text=, not =FIELD=) |
+
+The filtering functions are implemented in Perl modules on the server. You can extend the set of available functions by creating a new package in =lib/Foswiki/Plugins/MirrorWebPlugin/Rules/=. For example, to append the current date to a field, create =lib/Foswiki/Plugins/MirrorWebPlugin/Rules/ADDDATE.pm=:
+<verbatim>
+package Foswiki::Func::MirrorWebPlugin::Rules::ADDDATE;
+use Foswiki::Time;
+sub execute {
+    my ($topicObject, $mirrorObject, $data) = @_;
+    return unless $data;
+    $data->{value} .= ' ' .
+           Foswiki::Time::formatTime(time, '$year-$mo-$day');
+    return $data;
+}
+1;
+</verbatim>
+All the functions useable in plugins (such as Foswiki::Func) are also available in filters. The parameters to the =execute= function are:
+| =$topicObject= | The Foswiki::Meta object of the source topic |
+| =$mirrorObject= | The Foswiki::Meta object of the mirror topic |
+| =$data= | For a FIELD, this is the structure representing the field, as stored in =Foswiki::Meta=. For =text=, it is the text of the topic. |
+| =@params= | Any additional parameters supplied in the rules, in brackets after the filter name (e.g for a filter =MYFILTER(Master,Slave)= then =@params= will be =('Master', 'Slave')= |
+Filters can operate directly on these objects; any changes to the =$topicObject= will be discarded. Filters should return =$data=, which is then passed to the next filter. The return value of the final filter function is used to set the data in the mirror topic. If it is =undef=, then the field will not be set in the mirror topic.
+
+If you create new filtering functions that may be useful to the Foswiki community, please attach them to Foswiki:Extensions.MirrorWebPlugin, with a comment describing what they do.
+
+---++ Enabling mirror-on-demand mode
+If you have followed the instructions to this point, your mirror is configured in _always mirror_ mode. You can change to _mirror on demand_ by
+setting the =ALLOWWEBMIRROR= preference in the web preferences of the web
+being mirrored.
+This operates like the standard access controls, and if it is set to a list
+of names it will:
+   1 Disable automatic mirroring on topic saves (for _everyone_),
+   1 Only allow the listed people access to the =%<nop>UPDATEMIRROR%= button.
+
+---++ Security
+Obviously if a footpad were able to change the mirroring rules for a web, they could mirror content to somewhere it is not intended to go. For this reason you are recommended to finalise all the MIRRORWEBPLUGIN_ preferences, and lock down the mirror rules topic.
+
+---++ Installation Instructions
+
+%$INSTALL_INSTRUCTIONS%
+
+---++ Info
+
+Another great Foswiki extension from the <a style="text-decoration:none" href="http://wikiring.com"><img src="%ATTACHURLPATH%/wikiringlogo20x20.png" alt="" /> *WikiRing* </a> - working together to improve your wiki experience!
+
+Many thanks to the following sponsors for supporting this work:
+   * Rental Result http://www.rentalresult.com/
+
+|  Author(s): | Crawford Currie http://c-dot.co.uk |
+|  Copyright: | &copy; 2009 Rental Result |
+|  License: | [[http://www.gnu.org/licenses/gpl.html][GPL (Gnu General Public License)]] |
+|  Release: | %$RELEASE% |
+|  Version: | %$VERSION% |
+|  Change History: | <!-- versions below in reverse order -->&nbsp; |
+|  Dependencies: | %$DEPENDENCIES% |
+|  Home page: | http://foswiki.org/bin/view/Extensions/MirrorWebPlugin |
+|  Support: | http://foswiki.org/bin/view/Support/MirrorWebPlugin |
+
+<!-- If you edit this topic, please make sure the extension author is aware
+     of it so they don't overwrite your changes. -->

@@ -1,0 +1,16 @@
+# Release manifest for MirrorWebPlugin
+data/System/MirrorWebPlugin.txt 0644 Documentation
+data/System/MirrorWebPluginExampleRules.txt 0644 Documentation
+lib/Foswiki/Plugins/MirrorWebPlugin.pm 0644 Perl module
+lib/Foswiki/Plugins/MirrorWebPlugin/Rules/ALLOWTOPICCHANGE.pm 0644 Perl module
+lib/Foswiki/Plugins/MirrorWebPlugin/Rules/ALLOWTOPICVIEW.pm 0644 Perl module
+lib/Foswiki/Plugins/MirrorWebPlugin/Rules/ALLOWTOPICCHANGE.pm 0644 Perl module
+lib/Foswiki/Plugins/MirrorWebPlugin/Rules/ALLOWTOPICVIEW.pm 0644 Perl module
+lib/Foswiki/Plugins/MirrorWebPlugin/Rules/CLEARPREFERENCES.pm 0644 Perl module
+lib/Foswiki/Plugins/MirrorWebPlugin/Rules/FORMFIELD.pm 0644 Perl module
+lib/Foswiki/Plugins/MirrorWebPlugin/Rules/MAKEGROUP.pm 0644 Perl module
+lib/Foswiki/Plugins/MirrorWebPlugin/Rules/NOSET.pm 0644 Perl module
+lib/Foswiki/Plugins/MirrorWebPlugin/Rules/SUBSCRIBE.pm 0644 Perl module
+lib/Foswiki/Plugins/MirrorWebPlugin/Rules/TEXTORCOMMENT.pm 0644 Perl module
+pub/System/MirrorWebPlugin/wikiringlogo20x20.png 0660
+pub/System/MirrorWebPlugin/logo.png 0660

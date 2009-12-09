@@ -1,0 +1,36 @@
+This example demonstrates use of the MirrorWebPlugin to mirror a tracking
+web that uses the !BugsContrib. The tracking web contains jobs belonging
+to several different customers. These jobs are mirrored into a shared mirror
+web where the customers can only see the topics intended for
+them.
+
+The topics to be mirrored all have "JobForm" attached to them,
+and the customer is identified by a "Customer" field in that form.
+
+Each customer has a group topic, the name of which is derived from
+the Customer field using MAKEGROUP. Members of this group are granted
+view access using ALLOWTOPICVIEW. The value
+of the 'Manager' field in the group topic is retrieved by FORMFIELD and
+used as the new value for the 'Customer' field in the mirror topic.
+
+There is also a 'Contact' field in the source topic that contains the
+wikiname of someone in the company who interfaces to that customer.
+This person is subscribed to changes, and allowed to view
+and change the topic.
+
+<verbatim>
+JobForm => {
+   FIELD => {
+     Customer => [
+        'MAKEGROUP', 'ALLOWTOPICVIEW',
+        'FORMFIELD(Manager)'
+     ],
+     Contact => [ 'SUBSCRIBE', 'ALLOWTOPICVIEW', 'ALLOWTOPICCHANGE', 'NOSET' ]
+     JobNo => [],
+     Description => [],
+     Developer Status' => [],
+     Customer Status' => []
+   },
+   text => [ 'TEXTORCOMMENT' ]
+}
+</verbatim>
