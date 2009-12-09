@@ -1,7 +1,7 @@
 ---+!! !MirrorWebPlugin
 <a href="http://wikiring.com"><img src="%ATTACHURL%/logo.png" style="float:right" /></a>
 
-%SHORTDESCRIPTION%
+%$SHORTDESCRIPTION%
 
 %TOC%
 
@@ -128,3 +128,5 @@ Many thanks to the following sponsors for supporting this work:
 
 <!-- If you edit this topic, please make sure the extension author is aware
      of it so they don't overwrite your changes. -->
+%META:FILEATTACHMENT{name="logo.png" attrs="h"}%
+%META:FILEATTACHMENT{name="wikiringlogo20x20.png" attrs="h"}%
