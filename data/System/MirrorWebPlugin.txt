@@ -1,7 +1,9 @@
 ---+!! !MirrorWebPlugin
-<a href="http://wikiring.com"><img src="%ATTACHURL%/logo.png" style="float:right" /></a>
-
-%$SHORTDESCRIPTION%
+<img src="%ATTACHURL%/logo.png" style="float:right" />
+<!--
+    * Set SHORTDESCRIPTION = %$SHORTDESCRIPTION%
+-->
+%SHORTDESCRIPTION%
 
 %TOC%
 
@@ -66,8 +68,10 @@ The following example rules are installed with the plugin:
 | ALLOWTOPICCHANGE | Limit who can change the topic to people (wiki)named in a comma-separated list |
 | CLEARPREFERENCES | Removes all META:PREFERENCE settings from the mirror topic. It's usually wise to do this prior to setting access controls. |
 | FORMFIELD(Fieldname) | Gets the value of the named formfield from the topic named in the field. See VarFORMFIELD. |
-| MAKEGROUP | Convert the field value to a group name, by converting it to a wikiword and appending "Group". |
+| MAKEGROUP | Convert the field value to a group name, by converting it to a wikiword, prepending the user web name and appending "Group". |
 | NOSET | This is a 'NOP' that is used to terminate a filter chain *without* setting a value in the mirror topic. Use it when you want to process the value of a field, but without exporting that value to the mirror. |
+| RESTORE | Restore a previously saved value from earlier in the filter chain (see SAVE) |
+| SAVE | Save the (possibly filtered) value of the field at this point; it can be restored later in the filter chain using RESTORE. Only one value can be saved. |
 | SUBSCRIBE | Use the !MailerContrib to subscribe people (wiki)named in a comma-separated list to topic change notification |
 | TEXTORCOMMENT | If the mirror topic contains text, then retain it; otherwise add %<nop>COMMENT%, The topic text from the mirrored web is discarded (use with =text=, not =FIELD=) |
 
@@ -122,6 +126,7 @@ Many thanks to the following sponsors for supporting this work:
 |  Release: | %$RELEASE% |
 |  Version: | %$VERSION% |
 |  Change History: | <!-- versions below in reverse order -->&nbsp; |
+|  11 Dec 2009 | 1.1.2 first released version |
 |  Dependencies: | %$DEPENDENCIES% |
 |  Home page: | http://foswiki.org/bin/view/Extensions/MirrorWebPlugin |
 |  Support: | http://foswiki.org/bin/view/Support/MirrorWebPlugin |

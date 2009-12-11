@@ -10,7 +10,7 @@ sub execute {
     my ( $topicObject, $mirrorObject, $data ) = @_;
 
     # Use the MailerContrib to subscribe listed users to changes
-    my @who = split( /\s*,\s*/, $data->{value} );
+    my @who = split( /[\s,]+/, $data->{value} );
     foreach my $name (@who) {
         Foswiki::Contrib::MailerContrib::changeSubscription(
             $mirrorObject->web(), $name, $mirrorObject->topic() );

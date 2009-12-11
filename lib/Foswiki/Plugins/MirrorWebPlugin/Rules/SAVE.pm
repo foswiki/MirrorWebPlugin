@@ -1,19 +1,19 @@
 # See bottom of file for license and copyright information
 
-package Foswiki::Plugins::MirrorWebPlugin::Rules::MAKEGROUP;
+package Foswiki::Plugins::MirrorWebPlugin::Rules::SAVE;
 
 use strict;
 
-# Make a group wikiname from a comma-separated list of names
+our $saved;
+
+# Save a value for later restoration
 sub execute {
     my ( $topicObject, $mirrorObject, $data ) = @_;
-    my @who = split( /\s*,\s*/, $data->{value} );
-    foreach (@who) {
-        $_ =~ s/ +(.)/\U$1\E/g;
-        $_ =~ s/\W//g;
-        $_ = $Foswiki::cfg{UsersWebName}.'.'.$_.'Group';
+    if (ref($data)) {
+        $saved = $data->{value};
+    } else {
+        $saved = $data;
     }
-    $data->{value} = join( ',', @who );
     return $data;
 }
 

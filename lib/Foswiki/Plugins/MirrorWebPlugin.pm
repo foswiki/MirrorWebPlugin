@@ -16,7 +16,7 @@ use Foswiki::Func    ();
 use Foswiki::Plugins ();
 
 our $VERSION = '$Rev: 5154 $';
-our $RELEASE = '1.1.1';
+our $RELEASE = '1.1.2';
 our $SHORTDESCRIPTION =
   'Mirror a web to another, with filtering on the topic text and fields.';
 our $NO_PREFS_IN_TOPIC = 1;
@@ -31,6 +31,12 @@ sub initPlugin {
     return 1;
 }
 
+# The rules must observe the following grammar:
+# value :: array | hash | string ;
+# array :: '[' value ( ',' value )* ']' ;
+# hash  :: '{' keydef ( ',' keydef )* ']';
+# keydef :: string '=>' value ;
+# string ::= single quoted string, use \' to escape a quote, or \w+
 sub _loadRules {
     my ( $rules, $tom ) = @_;
 
@@ -42,8 +48,11 @@ sub _loadRules {
         my ( $meta, $text ) = Foswiki::Func::readTopic( $web, $topic );
 
         # Implicit untaint
-        if ( $text =~ /<verbatim>([][\s\w=>{}()',]+)<\/verbatim>/s ) {
+        if ( $text =~ m#<verbatim>(.+)<\/verbatim>#s ) {
             my $clean = $1;
+            if ( my $s = _rvalue( $clean )) {
+                die "Could not parse rules (at: $s) $clean";
+            }
             my $FORMS;
             eval "\$FORMS={$clean}";
             die "Unable to load $key: $@" if $@;
@@ -57,8 +66,38 @@ sub _loadRules {
     return $RULES{$key};
 }
 
+# verify that the string is a legal rvalue according to the grammar
+sub _rvalue {
+    my ( $s, $term ) = @_;
+
+    $s =~ s/^\s*(.*?)\s*$/$1/s;
+    while ( length($s) > 0 && ( !$term || $s !~ s/^\s*$term// ) ) {
+        if ( $s =~ s/^\s*'//s ) {
+            my $escaped = 0;
+            while ( length($s) > 0 && $s =~ s/^(.)//s ) {
+                last if ( $1 eq "'" && !$escaped );
+                $escaped = $1 eq '\\';
+            }
+        }
+        elsif ( $s =~ s/^\s*(\w+)//s ) {
+        }
+        elsif ( $s =~ s/^\s*\[//s ) {
+            $s = _rvalue( $s, ']' );
+        }
+        elsif ( $s =~ s/^\s*{//s ) {
+            $s = _rvalue( $s, '}' );
+        }
+        elsif ( $s =~ s/^\s*(,|=>)//s ) {
+        }
+        else {
+            last;
+        }
+    }
+    return $s;
+}
+
 sub _synch {
-    my ( $topicObject, $mirrorWeb, $response ) = @_;
+    my ( $topicObject, $mirrorWeb ) = @_;
 
     my $mirrorObject;
     if ( Foswiki::Func::topicExists( $mirrorWeb, $topicObject->topic() ) ) {
@@ -93,8 +132,9 @@ sub _synch {
             $mirrorObject->text($data) if defined $data;
         }
         else {
-            $mirrorObject->remove($field);   # clear old fields
-                                             # Support for all other keyed types
+            # clear old fields
+            $mirrorObject->remove($field);
+            # Support for all other keyed types
             foreach my $name ( keys %{ $rules->{$field} } ) {
                 my $data = $topicObject->get( $field, $name );
                 $data = _applyFilters( $rules->{$field}->{$name},
@@ -115,10 +155,10 @@ sub _applyFilters {
     foreach my $f (@$filters) {
         die "Bad rule $f" unless $f =~ /^\w+(\([\w,]*\))?$/;
         my @params = ();
-        if ( $f =~ s/\((.*)\)$// ) {
+        my $filter = 'Foswiki::Plugins::MirrorWebPlugin::Rules::' . $f;
+        if ( $filter =~ s/\((.*)\)$// ) {
             @params = split( ',', $1 );
         }
-        my $filter = 'Foswiki::Plugins::MirrorWebPlugin::Rules::' . $f;
         eval 'require ' . $filter;
         die $@ if $@;
         $filter .= '::execute';
@@ -164,13 +204,17 @@ sub _UPDATEMIRROR {
         -method => 'post'
     );
     $html .= CGI::hidden( -name => 'topic', -value => '%WEB%.%TOPIC%' );
+    if ($params->{_DEFAULT}) {
+        $html .= CGI::hidden(
+            -name => 'topics', -value => $params->{_DEFAULT} );
+    }
     $html .= CGI::submit( -name => 'Update mirror' );
     $html .= CGI::end_form();
     return $html;
 }
 
 sub _restUPDATEMIRROR {
-    my ( $session, $plugin, $verb, $response ) = @_;
+    my ( $session, $plugin, $verb ) = @_;
 
     my $query = Foswiki::Func::getCgiQuery();
     my $web   = $query->param('web')
@@ -184,14 +228,14 @@ sub _restUPDATEMIRROR {
         )
       )
     {
-        $response->header(
+        print CGI::header(
             -status => 400,
             -type   => 'text/plain',
         );
-        $response->print("Access denied");
+        print "Access denied";
     }
 
-    $response->header(
+    print CGI::header(
         -status => 200,
         -type   => 'text/plain',
     );
@@ -199,13 +243,21 @@ sub _restUPDATEMIRROR {
     my $mirrorWeb =
       Foswiki::Func::getPreferencesValue( 'MIRRORWEBPLUGIN_MIRROR', $web );
     unless ( defined $mirrorWeb ) {
-        $response->print(<<HERE);
+        print(<<HERE);
 $web does not have MIRRORWEBPLUGIN_MIRROR defined, so nothing to do
 HERE
         return undef;
     }
 
-    my @topics = Foswiki::Func::getTopicList($web);
+    my @topics;
+    if ($query->param('topics')) {
+        my $tl = $query->param('topics');
+        $tl =~ /([\w,]*)/; # validate and untaint
+        @topics = split(',', $1);
+    } else {
+        @topics = Foswiki::Func::getTopicList($web);
+    }
+
     foreach my $topic (@topics) {
         my ( $meta, $text ) = Foswiki::Func::readTopic( $web, $topic );
         Foswiki::Func::pushTopicContext( $web, $topic );
@@ -214,8 +266,8 @@ HERE
         # right session in the $meta. This could be done by patching the
         # $meta object, but this should be longer-lasting.
         ( $meta, $text ) = Foswiki::Func::readTopic( $web, $topic );
-        if ( _synch( $meta, $mirrorWeb, $response ) ) {
-            $response->print("Synched $topic\n");
+        if ( _synch( $meta, $mirrorWeb ) ) {
+            print("Synched $topic\n");
         }
         Foswiki::Func::popTopicContext();
     }

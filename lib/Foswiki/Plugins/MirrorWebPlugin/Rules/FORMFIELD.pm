@@ -3,6 +3,7 @@
 package Foswiki::Plugins::MirrorWebPlugin::Rules::FORMFIELD;
 
 use strict;
+use Foswiki::Func();
 
 # Gets the value of the named form field from the topic named in the field,
 # using %FORMFIELD%.
@@ -10,9 +11,10 @@ sub execute {
     my ( $topicObject, $mirrorObject, $data, @params ) = @_;
     return undef unless defined $data;
     my $topic = $data->{value};
-    my $ff    = Foswiki::Func::expandCommonVariables(
-        "%FORMFIELD{\"$params[0]\"topic=\"$topic\"}%");
-    $data->{value} = $ff;
+    return $data unless $topic;
+    my $ff = Foswiki::Func::expandCommonVariables(
+        '%FORMFIELD{"'.$params[0].'" topic="'.$topic.'"}%');
+     $data->{value} = $ff;
     return $data;
 }
 
