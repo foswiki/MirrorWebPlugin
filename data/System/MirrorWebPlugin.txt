@@ -41,6 +41,9 @@ TaskTeamForm => {
         Summary => [],
         Status => []
     },
+    FILEATTACHMENT => [
+        '.*\.gif' => []
+    ],
     text => []
 },
 none {
@@ -56,7 +59,11 @@ This defines a set of filters for all topics that carry:
    1 =none= for topics with no form, or
    1 =other= for topics that have a form but it isn't explicitly listed, or if it would match 'none' but 'none' is not defined. If a topic doesn't match any of the defined rule sets, it won't be mirrored.
 
-Each form type maps parts of the topic to another hash or to a filter; at this level the keys 'FIELD' and 'text' can be used, relating to the individual fields in the form and the main body text respectively. 'text' is mapped direct to a filter. Under 'FIELD' the name of each form field is mapped to a list of filter names. =[]= means the same as 'accept this field without modification'. Any fields not listed in the rules will be ignored.
+Each form type maps parts of the topic to another hash or to a filter; at this level the keys 'FIELD', 'FILEATTACHMENT' and 'text' can be used, relating to the individual fields in the form and the main body text respectively. 'text' is mapped direct to a filter. Under 'FIELD' and 'FILEATTACHMENT', a list of regular expressions match the _full_ name of each entry, and map them to a list of filter names.
+   * =[]= means the same as 'accept this without modification'.
+   * Any fields/attachents not matched by any of the rules will be ignored.
+   * If a name is matched by more than one set of filters, then only the first match will be applied.
+   * FIELD matches the field name; FILEATTACHMENT matches the attachment name.
 
 Thus the example defines rules for topics that (1) have the form 'TaskTeamForm', (2) have no form or (3) have a form but it isn't known. If the topic has no form, the text is just copied. If the topic has a form, but it doesn't have any rules, then the transformation is to add the text returned by the 'UNKNOWN' function before the topic text. If the topic has the 'TaskTeamForm', then the body text and the 'Summary', and 'Status' fields from the form are all copied across without modification. The filtering of 'Customer' field is used to create a group name that is then used to set the access controls on the mirror topic.
 
@@ -91,7 +98,7 @@ sub execute {
 All the functions useable in plugins (such as Foswiki::Func) are also available in filters. The parameters to the =execute= function are:
 | =$topicObject= | The Foswiki::Meta object of the source topic |
 | =$mirrorObject= | The Foswiki::Meta object of the mirror topic |
-| =$data= | For a FIELD, this is the structure representing the field, as stored in =Foswiki::Meta=. For =text=, it is the text of the topic. |
+| =$data= | For a FIELD or FILEATTACHMENT, this is the structure representing the field, as stored in =Foswiki::Meta=. For =text=, it is the text of the topic. |
 | =@params= | Any additional parameters supplied in the rules, in brackets after the filter name (e.g for a filter =MYFILTER(Master,Slave)= then =@params= will be =('Master', 'Slave')= |
 Filters can operate directly on these objects; any changes to the =$topicObject= will be discarded. Filters should return =$data=, which is then passed to the next filter. The return value of the final filter function is used to set the data in the mirror topic. If it is =undef=, then the field will not be set in the mirror topic.
 
@@ -126,6 +133,7 @@ Many thanks to the following sponsors for supporting this work:
 |  Release: | %$RELEASE% |
 |  Version: | %$VERSION% |
 |  Change History: | <!-- versions below in reverse order -->&nbsp; |
+|  21 Dec 2009 | 1.1.3 Support attachment synching, and make field name matches regexes |
 |  11 Dec 2009 | 1.1.2 first released version |
 |  Dependencies: | %$DEPENDENCIES% |
 |  Home page: | http://foswiki.org/bin/view/Extensions/MirrorWebPlugin |

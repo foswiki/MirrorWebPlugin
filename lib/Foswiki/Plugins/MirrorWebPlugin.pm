@@ -16,7 +16,7 @@ use Foswiki::Func    ();
 use Foswiki::Plugins ();
 
 our $VERSION = '$Rev: 5154 $';
-our $RELEASE = '1.1.2';
+our $RELEASE = '1.1.3';
 our $SHORTDESCRIPTION =
   'Mirror a web to another, with filtering on the topic text and fields.';
 our $NO_PREFS_IN_TOPIC = 1;
@@ -123,8 +123,8 @@ sub _synch {
         return 0 unless $rules;
     }
 
-    foreach my $field ( keys %$rules ) {
-        if ( $field eq 'text' ) {
+    foreach my $type ( keys %$rules ) {
+        if ( $type eq 'text' ) {
             my $data = $topicObject->text();
             $data =
               _applyFilters( $rules->{text}, $topicObject, $mirrorObject,
@@ -133,13 +133,24 @@ sub _synch {
         }
         else {
             # clear old fields
-            $mirrorObject->remove($field);
+            $mirrorObject->remove($type);
             # Support for all other keyed types
-            foreach my $name ( keys %{ $rules->{$field} } ) {
-                my $data = $topicObject->get( $field, $name );
-                $data = _applyFilters( $rules->{$field}->{$name},
-                    $topicObject, $mirrorObject, $data );
-                $mirrorObject->putKeyed( $field, $data ) if ref($data);
+            foreach my $regex ( keys %{ $rules->{$type} } ) {
+                # Find fields that match the regex
+                foreach my $data ($topicObject->find($type)) {
+                    if ($data->{name} =~ /^$regex$/) {
+                        $data = _applyFilters(
+                            $rules->{$type}->{$regex},
+                            $topicObject, $mirrorObject, $data );
+                         if (ref($data)) {
+                             $mirrorObject->putKeyed( $type, $data );
+                             if ($type eq 'FILEATTACHMENT') {
+                                 _synchAttachment(
+                                     $topicObject, $mirrorWeb, $data->{name});
+                             }
+                         }
+                    }
+                }
             }
         }
     }
@@ -167,6 +178,52 @@ sub _applyFilters {
         use strict 'refs';
     }
     return $data;
+}
+
+sub _synchAttachment {
+    my ( $topicObject, $mirrorWeb, $name ) = @_;
+
+    # If we are using a file database, do a simple
+    # copy, including the history.
+    if (-f $Foswiki::cfg{PubDir} . '/' . $topicObject->web() . '/'
+          . $topicObject->topic() . '/' . $name) {
+        mkdir($Foswiki::cfg{PubDir} . '/' . $mirrorWeb);
+        mkdir($Foswiki::cfg{PubDir} . '/' . $mirrorWeb . '/'
+          . $topicObject->topic());
+        File::Copy::copy(
+            $Foswiki::cfg{PubDir} . '/' . $topicObject->web() . '/'
+              . $topicObject->topic() . '/' . $name,
+            $Foswiki::cfg{PubDir} . '/' . $mirrorWeb . '/'
+              . $topicObject->topic() . '/' . $name);
+        if (-f $Foswiki::cfg{PubDir} . '/' . $topicObject->web() . '/'
+              . $topicObject->topic() . '/' . $name . ',v') {
+            File::Copy::copy(
+                $Foswiki::cfg{PubDir} . '/' . $topicObject->web() . '/'
+                  . $topicObject->topic() . '/' . $name . ',v',
+                $Foswiki::cfg{PubDir} . '/' . $mirrorWeb . '/'
+                  . $topicObject->topic() . '/' . $name . ',v');
+        }
+        print "Synched ".$topicObject->topic()."/$name\n";
+    } else {
+        # Otherwise copy over the latest
+        my $data = Foswiki::Func::readAttachment(
+              $topicObject->web(),
+              $topicObject->topic(),
+              $name);
+        my $tmpfile = new File::Temp();
+        print $tmpfile($data);
+        $tmpfile->close();
+        Foswiki::Func::saveAttachment(
+            $mirrorWeb,
+            $topicObject->topic(),
+            $data->{name},
+            {
+                dontlog       => 1,
+                comment       => "synched",
+                file          => $tmpfile->filename(),
+                notopicchange => 1,
+            });
+    }
 }
 
 # Handle the mirror, if required

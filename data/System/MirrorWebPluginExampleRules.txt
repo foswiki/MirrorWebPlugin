@@ -31,6 +31,9 @@ JobForm => {
      Developer Status' => [],
      Customer Status' => []
    },
+   FILEATTACHMENT => [
+     '.*\.jpg' => []
+   ],
    text => [ 'TEXTORCOMMENT' ]
 }
 </verbatim>
