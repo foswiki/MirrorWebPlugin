@@ -16,7 +16,7 @@ use Foswiki::Func    ();
 use Foswiki::Plugins ();
 
 our $VERSION = '$Rev: 5154 $';
-our $RELEASE = '1.1.3';
+our $RELEASE = '1.1.4';
 our $SHORTDESCRIPTION =
   'Mirror a web to another, with filtering on the topic text and fields.';
 our $NO_PREFS_IN_TOPIC = 1;
@@ -183,10 +183,15 @@ sub _applyFilters {
 sub _synchAttachment {
     my ( $topicObject, $mirrorWeb, $name ) = @_;
 
+    # This came from the FILEATTACHMENT in a topic, so may be
+    # polluted. Sanitize it.
+    ( $name ) = Foswiki::Sandbox::sanitizeAttachmentName($name);
+
     # If we are using a file database, do a simple
     # copy, including the history.
     if (-f $Foswiki::cfg{PubDir} . '/' . $topicObject->web() . '/'
           . $topicObject->topic() . '/' . $name) {
+
         mkdir($Foswiki::cfg{PubDir} . '/' . $mirrorWeb);
         mkdir($Foswiki::cfg{PubDir} . '/' . $mirrorWeb . '/'
           . $topicObject->topic());

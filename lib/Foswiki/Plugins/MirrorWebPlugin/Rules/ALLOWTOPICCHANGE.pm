@@ -8,7 +8,9 @@ use strict;
 sub execute {
     my ( $topicObject, $mirrorObject, $data ) = @_;
     $mirrorObject->putKeyed( "PREFERENCE",
-        { name => "ALLOWTOPICCHANGE", value => $data->{value} } );
+        { name => "ALLOWTOPICCHANGE",
+          title => "ALLOWTOPICCHANGE",
+          value => $data->{value} } );
     return $data;
 }
 
