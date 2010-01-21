@@ -16,7 +16,7 @@ use Foswiki::Func    ();
 use Foswiki::Plugins ();
 
 our $VERSION = '$Rev: 5154 $';
-our $RELEASE = '1.1.4';
+our $RELEASE = '1.1.5';
 our $SHORTDESCRIPTION =
   'Mirror a web to another, with filtering on the topic text and fields.';
 our $NO_PREFS_IN_TOPIC = 1;
@@ -112,11 +112,14 @@ sub _synch {
     my $ruleset = Foswiki::Func::getPreferencesValue('MIRRORWEBPLUGIN_RULES');
     return 0 unless $ruleset;
     $ruleset = _loadRules( $ruleset, $topicObject );
+
     my $rules;
     my $form = $topicObject->get('FORM');
     if ($form) {
         $rules = $ruleset->{ $form->{name} };
         $mirrorObject->put( 'FORM', { name => $form->{name} } );
+    } else {
+        $rules = $ruleset->{'none'};
     }
     unless ($rules) {
         $rules = $ruleset->{'other'};
