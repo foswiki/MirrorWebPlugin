@@ -16,11 +16,15 @@ use Foswiki::Func    ();
 use Foswiki::Plugins ();
 
 our $VERSION = '$Rev: 5154 $';
-our $RELEASE = '1.1.5';
+our $RELEASE = '1.1.6';
 our $SHORTDESCRIPTION =
   'Mirror a web to another, with filtering on the topic text and fields.';
 our $NO_PREFS_IN_TOPIC = 1;
 our %RULES;
+our $recursionBlock;
+# Enable this to print progress messages to STDOUT. Don't enable it in
+# a handler!
+our $printProgress = 0;
 
 sub initPlugin {
     my ( $topic, $web, $user, $installWeb ) = @_;
@@ -211,7 +215,7 @@ sub _synchAttachment {
                 $Foswiki::cfg{PubDir} . '/' . $mirrorWeb . '/'
                   . $topicObject->topic() . '/' . $name . ',v');
         }
-        print "Synched ".$topicObject->topic()."/$name\n";
+        print "Synched ".$topicObject->topic()."/$name\n" if $printProgress;
     } else {
         # Otherwise copy over the latest
         my $data = Foswiki::Func::readAttachment(
@@ -237,6 +241,9 @@ sub _synchAttachment {
 # Handle the mirror, if required
 sub afterSaveHandler {
     my ( $text, $topic, $web, $error, $meta ) = @_;
+
+    return if $recursionBlock;
+    local $recursionBlock = 1;
 
     my $mirror = Foswiki::Func::getPreferencesValue( 'ALLOWWEBMIRROR', $web );
     return if $mirror;
@@ -323,6 +330,7 @@ HERE
         @topics = Foswiki::Func::getTopicList($web);
     }
 
+    local $printProgress = 1;
     foreach my $topic (@topics) {
         my ( $meta, $text ) = Foswiki::Func::readTopic( $web, $topic );
         Foswiki::Func::pushTopicContext( $web, $topic );

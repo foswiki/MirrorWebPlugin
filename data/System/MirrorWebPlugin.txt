@@ -128,11 +128,12 @@ Many thanks to the following sponsors for supporting this work:
    * Rental Result http://www.rentalresult.com/
 
 |  Author(s): | Crawford Currie http://c-dot.co.uk |
-|  Copyright: | &copy; 2009 Rental Result |
+|  Copyright: | &copy; 2009-2010 Rental Result |
 |  License: | [[http://www.gnu.org/licenses/gpl.html][GPL (Gnu General Public License)]] |
 |  Release: | %$RELEASE% |
 |  Version: | %$VERSION% |
 |  Change History: | <!-- versions below in reverse order -->&nbsp; |
+|  2 Feb 2010 | 1.1.6 Foswiki:Tasks/Item8457: fixed broken synch when invoked from save handler |
 |  21 Jan 2010 | 1.1.5 Foswiki:Tasks/Item8407: fixed 'none' rule |
 |  6 Jan 2010 | 1.1.4 Correct problem with tainted variables, and add a =title= attribute to META:PREFERENCEs to work around Foswiki:Tasks.Item2601 |
 |  21 Dec 2009 | 1.1.3 Support attachment synching, and make field name matches regexes |
