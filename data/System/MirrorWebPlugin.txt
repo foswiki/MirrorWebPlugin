@@ -1,7 +1,7 @@
 ---+!! !MirrorWebPlugin
 <img src="%ATTACHURL%/logo.png" style="float:right" />
 <!--
-    * Set SHORTDESCRIPTION = %$SHORTDESCRIPTION%
+   * Set SHORTDESCRIPTION = %$SHORTDESCRIPTION%
 -->
 %SHORTDESCRIPTION%
 
