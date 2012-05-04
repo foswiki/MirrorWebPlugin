@@ -6,10 +6,14 @@ use strict;
 
 sub execute {
     my ( $topicObject, $mirrorObject, $data ) = @_;
-    $mirrorObject->putKeyed( "PREFERENCE",
-        { name => "ALLOWTOPICVIEW",
-          title => "ALLOWTOPICVIEW",
-          value => $data->{value} } );
+    $mirrorObject->putKeyed(
+        "PREFERENCE",
+        {
+            name  => "ALLOWTOPICVIEW",
+            title => "ALLOWTOPICVIEW",
+            value => $data->{value}
+        }
+    );
     return $data;
 }
 

@@ -9,9 +9,10 @@ our $saved;
 # Save a value for later restoration
 sub execute {
     my ( $topicObject, $mirrorObject, $data ) = @_;
-    if (ref($data)) {
+    if ( ref($data) ) {
         $saved = $data->{value};
-    } else {
+    }
+    else {
         $saved = $data;
     }
     return $data;
