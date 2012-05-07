@@ -13,8 +13,8 @@ sub execute {
     my $topic = $data->{value};
     return $data unless $topic;
     my $ff = Foswiki::Func::expandCommonVariables(
-        '%FORMFIELD{"' . $params[0] . '" topic="' . $topic . '"}%' );
-    $data->{value} = $ff;
+        '%FORMFIELD{"'.$params[0].'" topic="'.$topic.'"}%');
+     $data->{value} = $ff;
     return $data;
 }
 

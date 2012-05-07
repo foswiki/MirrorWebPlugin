@@ -22,7 +22,6 @@ our $SHORTDESCRIPTION =
 our $NO_PREFS_IN_TOPIC = 1;
 our %RULES;
 our $recursionBlock;
-
 # Enable this to print progress messages to STDOUT. Don't enable it in
 # a handler!
 our $printProgress = 0;
@@ -55,7 +54,7 @@ sub _loadRules {
         # Implicit untaint
         if ( $text =~ m#<verbatim>(.+)<\/verbatim>#s ) {
             my $clean = $1;
-            if ( my $s = _rvalue($clean) ) {
+            if ( my $s = _rvalue( $clean )) {
                 die "Could not parse rules (at: $s) $clean";
             }
             my $FORMS;
@@ -123,8 +122,7 @@ sub _synch {
     if ($form) {
         $rules = $ruleset->{ $form->{name} };
         $mirrorObject->put( 'FORM', { name => $form->{name} } );
-    }
-    else {
+    } else {
         $rules = $ruleset->{'none'};
     }
     unless ($rules) {
@@ -141,25 +139,23 @@ sub _synch {
             $mirrorObject->text($data) if defined $data;
         }
         else {
-
             # clear old fields
             $mirrorObject->remove($type);
-
             # Support for all other keyed types
             foreach my $regex ( keys %{ $rules->{$type} } ) {
-
                 # Find fields that match the regex
-                foreach my $data ( $topicObject->find($type) ) {
-                    if ( $data->{name} =~ /^$regex$/ ) {
-                        $data = _applyFilters( $rules->{$type}->{$regex},
+                foreach my $data ($topicObject->find($type)) {
+                    if ($data->{name} =~ /^$regex$/) {
+                        $data = _applyFilters(
+                            $rules->{$type}->{$regex},
                             $topicObject, $mirrorObject, $data );
-                        if ( ref($data) ) {
-                            $mirrorObject->putKeyed( $type, $data );
-                            if ( $type eq 'FILEATTACHMENT' ) {
-                                _synchAttachment( $topicObject, $mirrorWeb,
-                                    $data->{name} );
-                            }
-                        }
+                         if (ref($data)) {
+                             $mirrorObject->putKeyed( $type, $data );
+                             if ($type eq 'FILEATTACHMENT') {
+                                 _synchAttachment(
+                                     $topicObject, $mirrorWeb, $data->{name});
+                             }
+                         }
                     }
                 }
             }
@@ -196,55 +192,36 @@ sub _synchAttachment {
 
     # This came from the FILEATTACHMENT in a topic, so may be
     # polluted. Sanitize it.
-    ($name) = Foswiki::Sandbox::sanitizeAttachmentName($name);
+    ( $name ) = Foswiki::Sandbox::sanitizeAttachmentName($name);
 
     # If we are using a file database, do a simple
     # copy, including the history.
-    if (  -f $Foswiki::cfg{PubDir} . '/'
-        . $topicObject->web() . '/'
-        . $topicObject->topic() . '/'
-        . $name )
-    {
+    if (-f $Foswiki::cfg{PubDir} . '/' . $topicObject->web() . '/'
+          . $topicObject->topic() . '/' . $name) {
 
-        mkdir( $Foswiki::cfg{PubDir} . '/' . $mirrorWeb );
-        mkdir(  $Foswiki::cfg{PubDir} . '/'
-              . $mirrorWeb . '/'
-              . $topicObject->topic() );
+        mkdir($Foswiki::cfg{PubDir} . '/' . $mirrorWeb);
+        mkdir($Foswiki::cfg{PubDir} . '/' . $mirrorWeb . '/'
+          . $topicObject->topic());
         File::Copy::copy(
-            $Foswiki::cfg{PubDir} . '/'
-              . $topicObject->web() . '/'
-              . $topicObject->topic() . '/'
-              . $name,
-            $Foswiki::cfg{PubDir} . '/'
-              . $mirrorWeb . '/'
-              . $topicObject->topic() . '/'
-              . $name
-        );
-        if (  -f $Foswiki::cfg{PubDir} . '/'
-            . $topicObject->web() . '/'
-            . $topicObject->topic() . '/'
-            . $name
-            . ',v' )
-        {
+            $Foswiki::cfg{PubDir} . '/' . $topicObject->web() . '/'
+              . $topicObject->topic() . '/' . $name,
+            $Foswiki::cfg{PubDir} . '/' . $mirrorWeb . '/'
+              . $topicObject->topic() . '/' . $name);
+        if (-f $Foswiki::cfg{PubDir} . '/' . $topicObject->web() . '/'
+              . $topicObject->topic() . '/' . $name . ',v') {
             File::Copy::copy(
-                $Foswiki::cfg{PubDir} . '/'
-                  . $topicObject->web() . '/'
-                  . $topicObject->topic() . '/'
-                  . $name . ',v',
-                $Foswiki::cfg{PubDir} . '/'
-                  . $mirrorWeb . '/'
-                  . $topicObject->topic() . '/'
-                  . $name . ',v'
-            );
+                $Foswiki::cfg{PubDir} . '/' . $topicObject->web() . '/'
+                  . $topicObject->topic() . '/' . $name . ',v',
+                $Foswiki::cfg{PubDir} . '/' . $mirrorWeb . '/'
+                  . $topicObject->topic() . '/' . $name . ',v');
         }
-        print "Synched " . $topicObject->topic() . "/$name\n" if $printProgress;
-    }
-    else {
-
+        print "Synched ".$topicObject->topic()."/$name\n" if $printProgress;
+    } else {
         # Otherwise copy over the latest
-        my $data =
-          Foswiki::Func::readAttachment( $topicObject->web(),
-            $topicObject->topic(), $name );
+        my $data = Foswiki::Func::readAttachment(
+              $topicObject->web(),
+              $topicObject->topic(),
+              $name);
         my $tmpfile = new File::Temp();
         print $tmpfile($data);
         $tmpfile->close();
@@ -257,8 +234,7 @@ sub _synchAttachment {
                 comment       => "synched",
                 file          => $tmpfile->filename(),
                 notopicchange => 1,
-            }
-        );
+            });
     }
 }
 
@@ -300,9 +276,9 @@ sub _UPDATEMIRROR {
         -method => 'post'
     );
     $html .= CGI::hidden( -name => 'topic', -value => '%WEB%.%TOPIC%' );
-    if ( $params->{_DEFAULT} ) {
-        $html .=
-          CGI::hidden( -name => 'topics', -value => $params->{_DEFAULT} );
+    if ($params->{_DEFAULT}) {
+        $html .= CGI::hidden(
+            -name => 'topics', -value => $params->{_DEFAULT} );
     }
     $html .= CGI::submit( -name => 'Update mirror' );
     $html .= CGI::end_form();
@@ -346,12 +322,11 @@ HERE
     }
 
     my @topics;
-    if ( $query->param('topics') ) {
+    if ($query->param('topics')) {
         my $tl = $query->param('topics');
-        $tl =~ /([\w,]*)/;    # validate and untaint
-        @topics = split( ',', $1 );
-    }
-    else {
+        $tl =~ /([\w,]*)/; # validate and untaint
+        @topics = split(',', $1);
+    } else {
         @topics = Foswiki::Func::getTopicList($web);
     }
 

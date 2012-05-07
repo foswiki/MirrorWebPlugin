@@ -7,14 +7,10 @@ use strict;
 # Limit who can change the topic to people named in a form field
 sub execute {
     my ( $topicObject, $mirrorObject, $data ) = @_;
-    $mirrorObject->putKeyed(
-        "PREFERENCE",
-        {
-            name  => "ALLOWTOPICCHANGE",
-            title => "ALLOWTOPICCHANGE",
-            value => $data->{value}
-        }
-    );
+    $mirrorObject->putKeyed( "PREFERENCE",
+        { name => "ALLOWTOPICCHANGE",
+          title => "ALLOWTOPICCHANGE",
+          value => $data->{value} } );
     return $data;
 }
 

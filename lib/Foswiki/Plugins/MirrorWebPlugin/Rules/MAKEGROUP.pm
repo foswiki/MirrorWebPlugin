@@ -11,7 +11,7 @@ sub execute {
     foreach (@who) {
         $_ =~ s/ +(.)/\U$1\E/g;
         $_ =~ s/\W//g;
-        $_ = $Foswiki::cfg{UsersWebName} . '.' . $_ . 'Group';
+        $_ = $Foswiki::cfg{UsersWebName}.'.'.$_.'Group';
     }
     $data->{value} = join( ',', @who );
     return $data;
