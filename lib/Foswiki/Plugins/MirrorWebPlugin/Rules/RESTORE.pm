@@ -8,12 +8,11 @@ use Foswiki::Plugins::MirrorWebPlugin::Rules::SAVE ();
 # Save a value for later restoration
 sub execute {
     my ( $topicObject, $mirrorObject, $data ) = @_;
-    if (ref($data)) {
-        $data->{value} =
-          $Foswiki::Plugins::MirrorWebPlugin::Rules::SAVE::saved;
-    } else {
-        $data =
-          $Foswiki::Plugins::MirrorWebPlugin::Rules::SAVE::saved;
+    if ( ref($data) ) {
+        $data->{value} = $Foswiki::Plugins::MirrorWebPlugin::Rules::SAVE::saved;
+    }
+    else {
+        $data = $Foswiki::Plugins::MirrorWebPlugin::Rules::SAVE::saved;
     }
     return $data;
 }
